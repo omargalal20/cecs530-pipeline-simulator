@@ -65,7 +65,7 @@ In the tables, a stage name marks the first cycle in that stage and `stall` mark
 The code uses only the Python standard library (Python 3.8 or newer). Nothing needs to be installed.
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/omargalal20/cecs530-pipeline-simulator.git
 cd cecs530-pipeline-simulator
 python pipeline_simulator.py
 ```
