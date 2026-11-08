@@ -1,0 +1,152 @@
+=== Question 1: Ideal Five-Stage Pipeline ===
+
+I1: ADD R1, R2, R3
+I2: SUB R4, R5, R6
+I3: AND R7, R8, R9
+I4: OR R10, R11, R12
+I5: ADD R13, R14, R15
+
+Cycle: 1   2   3   4   5   6   7   8   9
+
+I1:    IF  ID  EX  MEM WB
+I2:        IF  ID  EX  MEM WB
+I3:            IF  ID  EX  MEM WB
+I4:                IF  ID  EX  MEM WB
+I5:                    IF  ID  EX  MEM WB
+
+Total cycles = 9
+CPI = 9 / 5 = 1.80
+
+
+=== Question 2: RAW Data Hazard Detection ===
+
+I1: ADD R1, R2, R3
+I2: SUB R4, R1, R5
+I3: AND R6, R4, R7
+I4: OR R8, R9, R10
+I5: ADD R11, R6, R8
+
+Instr  Dest  Sources
+I1     R1    R2, R3
+I2     R4    R1, R5
+I3     R6    R4, R7
+I4     R8    R9, R10
+I5     R11   R6, R8
+
+RAW Dependencies Detected:
+
+I1 -> I2 : Register R1
+I2 -> I3 : Register R4
+I3 -> I5 : Register R6
+I4 -> I5 : Register R8
+
+Instructions that may need stalls (no forwarding):
+
+I1: no stall, it reads no register written by an earlier instruction
+I2: waits for R1 from I1 (distance 1, 2 stall(s)) -> up to 2 stall cycle(s)
+I3: waits for R4 from I2 (distance 1, 2 stall(s)) -> up to 2 stall cycle(s)
+I4: no stall, it reads no register written by an earlier instruction
+I5: waits for R6 from I3 (distance 2, 1 stall(s)); R8 from I4 (distance 1, 2 stall(s)) -> up to 2 stall cycle(s)
+
+These counts assume no earlier stalls. Question 3 simulates the exact cycles.
+
+
+=== Question 3: Pipeline Stalls and Performance ===
+
+I1: ADD R1, R2, R3
+I2: SUB R4, R1, R5
+I3: AND R6, R4, R7
+I4: OR R8, R9, R10
+I5: ADD R11, R6, R8
+
+Cycle: 1     2     3     4     5     6     7     8     9     10    11    12    13    14    15
+
+I1:    IF    ID    EX    MEM   WB
+I2:          IF    ID    stall stall EX    MEM   WB
+I3:                IF    stall stall ID    stall stall EX    MEM   WB
+I4:                                  IF    stall stall ID    EX    MEM   WB
+I5:                                                    IF    ID    stall stall EX    MEM   WB
+
+Stall cycles (waiting in ID):
+
+I2: 2
+I3: 2
+I5: 2
+Total stall cycles = 6
+
+Total cycles = 15
+CPI = 15 / 5 = 3.00
+
+              Ideal (Q1)         With stalls (Q3)
+Instructions  5                  5
+Total cycles  9                  15
+CPI           1.80               3.00
+
+Extra cycles caused by stalls = 15 - 9 = 6
+
+
+=== Question 4: Instruction Scheduling ===
+
+Original sequence:
+I1: LD R1, 0(R2)
+I2: ADD R3, R1, R4
+I3: SUB R5, R6, R7
+I4: AND R8, R9, R10
+I5: OR R11, R3, R12
+
+RAW Dependencies Detected:
+
+I1 -> I2 : Register R1
+I2 -> I5 : Register R3
+
+Cycle: 1     2     3     4     5     6     7     8     9     10    11
+
+I1:    IF    ID    EX    MEM   WB
+I2:          IF    ID    stall stall EX    MEM   WB
+I3:                IF    stall stall ID    EX    MEM   WB
+I4:                                  IF    ID    EX    MEM   WB
+I5:                                        IF    ID    EX    MEM   WB
+
+Stall cycles (waiting in ID):
+
+I2: 2
+Total stall cycles = 2
+
+Total cycles = 11
+CPI = 11 / 5 = 2.20
+
+
+Reordered sequence:
+I1: LD R1, 0(R2)
+I3: SUB R5, R6, R7
+I4: AND R8, R9, R10
+I2: ADD R3, R1, R4
+I5: OR R11, R3, R12
+
+All dependencies kept in order: yes
+
+Cycle: 1     2     3     4     5     6     7     8     9     10    11
+
+I1:    IF    ID    EX    MEM   WB
+I3:          IF    ID    EX    MEM   WB
+I4:                IF    ID    EX    MEM   WB
+I2:                      IF    ID    EX    MEM   WB
+I5:                            IF    ID    stall stall EX    MEM   WB
+
+Stall cycles (waiting in ID):
+
+I5: 2
+Total stall cycles = 2
+
+Total cycles = 11
+CPI = 11 / 5 = 2.20
+
+
+              Original    Reordered
+Instructions  5           5
+Total cycles  11          11
+CPI           2.20        2.20
+
+Improvement = (11 - 11) / 11 x 100 = 0.00%
+
+Checked all 20 orderings that keep the dependencies; the fewest cycles possible is 11.
